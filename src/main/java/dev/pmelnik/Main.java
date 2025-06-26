@@ -14,7 +14,7 @@ public class Main {
         try {
             long startTime = System.currentTimeMillis();
 
-            String[][] data = DataReader.readGzippedCsv(args[0]);
+            String[][] data = DataReader.readFile(args[0]);
 
             List<int[]> groups = DataGrouper.groupData(data);
 
@@ -32,7 +32,7 @@ public class Main {
         long multiElementGroups = groups.stream().filter(g -> g.length > 1).count();
         double elapsedTime = (System.currentTimeMillis() - startTime) / 1000.0;
 
-        System.out.println("Groups with more then one element: " + multiElementGroups);
+        System.out.println("Groups with more than one element: " + multiElementGroups);
         System.out.printf("Execution time: %.3f sec.%n", elapsedTime);
     }
 

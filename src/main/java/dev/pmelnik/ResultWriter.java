@@ -14,11 +14,11 @@ public class ResultWriter {
             throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputPath))) {
             int multiElementGroups = (int) groups.stream().filter(g -> g.length > 1).count();
-            writer.write("Групп с более чем одним элементом: " + multiElementGroups + "\n");
+            writer.write("Groups with more than one element: " + multiElementGroups + "\n");
 
             int groupNum = 1;
             for (int[] group : groups) {
-                writer.write("Группа " + groupNum++ + "\n");
+                writer.write("Group " + groupNum++ + "\n");
                 for (int rowIndex : group) {
                     writer.write(formatLine(data[rowIndex]) + "\n");
                 }
