@@ -20,8 +20,8 @@ import java.util.zip.GZIPInputStream;
 public class DataReader {
 
     /**
-     * Читает файл (распаковывает .gz при необходимости)
-     * @param filePath путь к файлу (.txt или .gz)
+     * Читает файл (распаковывает .gz или 7z при необходимости)
+     * @param filePath путь к файлу
      */
     public static String[][] readFile(String filePath) throws IOException {
         try (BufferedReader reader = createReader(filePath)) {
