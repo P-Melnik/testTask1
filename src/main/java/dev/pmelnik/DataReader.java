@@ -1,9 +1,16 @@
 package dev.pmelnik;
 
+import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
+import org.apache.commons.compress.archivers.sevenz.SevenZFile;
+
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -23,22 +30,44 @@ public class DataReader {
     }
 
     /**
-     * Создает BufferedReader с автоматическим распаковыванием .gz
+     * Создает BufferedReader с автоматическим распаковыванием .gz или 7z
      */
     private static BufferedReader createReader(String filePath) throws IOException {
         InputStream fileStream = Files.newInputStream(Paths.get(filePath));
 
-        // Если файл .gz - добавляем GZIP распаковку
         if (filePath.toLowerCase().endsWith(".gz")) {
             return new BufferedReader(
                     new InputStreamReader(
-                            new GZIPInputStream(fileStream)));
+                            new GZIPInputStream(fileStream), StandardCharsets.UTF_8));
         }
+        else if (filePath.toLowerCase().endsWith(".7z")) {
+            SevenZFile sevenZFile = new SevenZFile(Paths.get(filePath).toFile());
+            SevenZArchiveEntry entry;
+            while ((entry = sevenZFile.getNextEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    String entryName = entry.getName().toLowerCase();
+                    if (entryName.endsWith(".csv") || entryName.endsWith(".txt")) {
+                        File tempFile = File.createTempFile("7zentry", ".csv");
+                        tempFile.deleteOnExit();
 
-        // Для обычных файлов
+                        try (OutputStream out = new FileOutputStream(tempFile)) {
+                            byte[] buffer = new byte[8192];
+                            int bytesRead;
+                            while ((bytesRead = sevenZFile.read(buffer)) != -1) {
+                                out.write(buffer, 0, bytesRead);
+                            }
+                        }
+                        sevenZFile.close();
+
+                        return Files.newBufferedReader(tempFile.toPath(), StandardCharsets.UTF_8);
+                    }
+                }
+            }
+            sevenZFile.close();
+            throw new IOException("Не найден CSV или текстовый файл в 7z архиве");
+        }
         return new BufferedReader(
-                new InputStreamReader(fileStream)
-        );
+                new InputStreamReader(fileStream, StandardCharsets.UTF_8));
     }
 
     /**
