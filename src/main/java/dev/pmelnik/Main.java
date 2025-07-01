@@ -1,39 +1,48 @@
 package dev.pmelnik;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.time.Duration;
+import java.time.Instant;
 
 public class Main {
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-            System.err.println("Pls use: java -jar <name>.jar filePath.txt.gz");
-            return;
-        }
-
         try {
-            long startTime = System.currentTimeMillis();
+            validateArguments(args);
+            File inputFile = getInputFile(args[0]);
 
-            String[][] data = DataReader.readFile(args[0]);
+            Instant start = Instant.now();
+            GroupAnalysisResult result = new DataProcessor().processFile(inputFile);
 
-            List<int[]> groups = DataGrouper.groupData(data);
-
-            ResultWriter.writeResults(groups, data, "output.txt");
-
-            printStatistics(startTime, groups);
-
-        } catch (IOException e) {
+            printResults(result, start);
+        } catch (IllegalArgumentException e) {
             System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.err.println("IO Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Unexpected error: " + e.getMessage());
         }
     }
 
-    private static void printStatistics(long startTime, List<int[]> groups) {
-        long multiElementGroups = groups.stream().filter(g -> g.length > 1).count();
-        double elapsedTime = (System.currentTimeMillis() - startTime) / 1000.0;
 
-        System.out.println("Groups with more than one element: " + multiElementGroups);
-        System.out.printf("Execution time: %.3f sec.%n", elapsedTime);
+    private static void validateArguments(String[] args) {
+        if (args.length < 1) {
+            throw new IllegalArgumentException("No file path provided");
+        }
     }
 
+    private static File getInputFile(String filePath) {
+        File inputFile = new File(filePath);
+        if (!inputFile.exists()) {
+            throw new IllegalArgumentException("File not found: " + filePath);
+        }
+        return inputFile;
+    }
+
+    private static void printResults(GroupAnalysisResult result, Instant startTime) {
+        result.printStatistics();
+        long durationMs = Duration.between(startTime, Instant.now()).toMillis();
+        System.out.printf("Execution time: %d ms%n", durationMs);
+    }
 }
